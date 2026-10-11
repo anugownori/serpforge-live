@@ -1,0 +1,15 @@
+services:
+  serpforge:
+    build: .
+    restart: unless-stopped
+    env_file: .env.local
+    environment:
+      DATA_DIR: /app/data
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    volumes:
+      - serpforge_data:/app/data
+    mem_limit: 1g
+volumes:
+  serpforge_data:
