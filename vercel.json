@@ -1,3 +1,9 @@
 {
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "functions": {
+    "app/api/run/route.js": { "maxDuration": 300 },
+    "app/api/run/[id]/route.js": { "maxDuration": 60 },
+    "app/api/report/[id]/route.js": { "maxDuration": 60 },
+    "app/api/patch/[id]/route.js": { "maxDuration": 60 }
+  }
 }
