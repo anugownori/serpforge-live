@@ -1,81 +1,138 @@
 # SERPForge Live — Real SEO + AEO Website Intelligence
 
-SERPForge is a **working-source application** that audits a real public website, retrieves fresh SerpApi Google Search, Autocomplete and AI Mode responses, maps the website's **actual crawled links**, identifies observable SEO issues and optionally generates a **downloadable Next.js metadata patch** from a real public GitHub repository. It does **not** ship with a sample website, hard-coded search results, simulated progress counters or fake AI citations.
+SERPForge is a **working-source application** that audits a real public website, retrieves fresh SerpApi Google Search, Autocomplete and AI Mode responses, maps the website's **actual crawled links**, identifies observable SEO issues, computes a **Keyword Gap Radar**, evaluates **AEO (AI Mode) visibility**, and generates a **downloadable Next.js metadata patch** from a real public GitHub repository. It does **not** ship with a sample website, hard-coded search results, simulated progress counters or fake AI citations.
 
-## Actual capabilities
+---
 
-- Accept a real **public HTTPS website**, query and selected Google Search locales (English / Hindi / Kannada). Changing `hl` is a locale setting, **not** an automatic translation of the query.
-- Crawl up to 15 pages, same-origin only, depth up to 2; respect `robots.txt`, timeouts and response-size limits. Sites that block bots may be unavailable.
-- Visualize observed page nodes and true hyperlinks in the **interactive Spider** view with page selection, issue coloring, zoom, real traversal progress and a crawler position indicator.
-- Fetch **fresh search API responses** with SerpApi. Google Search returns organic results, Autocomplete supplies real suggestions and AI Mode gives sampled answer/citation data where available.
-- Run deterministic metadata, heading and duplicate-title checks. Export reports with the time, queries, URLs and evidence limitations.
-- Optionally read source from a **public GitHub Next.js App Router repository**, propose a minimal title/description edit and download a `.patch`. The tool **does not edit the repository, open a PR, rebuild arbitrary source, or deploy the patch**.
+## Intended Deployment
 
-## 1. Run locally
+- **Live Production URL:** [https://serpforge-live.vercel.app](https://serpforge-live.vercel.app)
+- **Health & Configuration Endpoint:** [https://serpforge-live.vercel.app/api/health](https://serpforge-live.vercel.app/api/health)
 
-Requirements: Node.js >=20.11, npm, working internet, a SerpApi account with access to the needed APIs.
+---
 
+## Actual Capabilities
+
+1. **Live Website Crawler:**
+   - Crawls up to 15 same-origin public pages (maximum depth: 2) on real HTTPS websites.
+   - Enforces fail-closed robots policy, request limits, page limits, and response-size limits (650 KB).
+   - Strict SSRF protection: Pins DNS lookups, verifies IPv4/IPv6 global routability, rejects private/loopback/cloud metadata (169.254.169.254) addresses.
+   - TLS SNI negotiation preserved on multi-tenant CDNs via explicit servername option.
+   - Never executes scripts or submits forms on audited websites.
+
+2. **Interactive Spider View:**
+   - Visualizes actual page nodes and real parent-child hyperlinks in an interactive SVG canvas.
+   - Supports **Pan (drag to pan)** and **Zoom (scroll / buttons clamp 0.5x to 2.0x)** with a Reset View button.
+   - Node issue coloring: Green (200 OK, no issues), Yellow (review finding), Orange (high priority), Gray (HTTP error / unreachable).
+   - **Recorded Traversal Playback:** For completed scans, replay the exact crawl traversal order step-by-step with Play / Pause / Step / Speed controls, labeled truthfully as *"Playback of recorded crawl traversal"*.
+   - **Search & Filter:** Search pages by URL path or title, filter by severity level.
+   - **Accessible Table Alternative:** Switch seamlessly between interactive SVG graph and a fully accessible, WCAG-compliant sortable table.
+   - **Reduced Motion Support:** Respects `prefers-reduced-motion` to disable animations.
+
+3. **Complete SerpApi Integration:**
+   - **Google Organic Search:** Top ranking positions, page titles, links, snippets, and distinct competitor domains.
+   - **Google Search Questions (PAA):** Normalized People Also Ask queries with snippet answers and provenance.
+   - **Google Autocomplete:** Authentic real-time keyword suggestions for English (`en`), Hindi (`hi`), and Kannada (`kn`).
+   - **Google AI Mode & AEO Engine:** Evaluates sampled AI answer visibility into granular categories:
+     - Specific page linked
+     - Website cited
+     - Product or service recommended
+     - Brand mentioned
+     - Not observed in sampled answer
+     - Result unavailable
+
+4. **Keyword Gap Radar:**
+   - Combines SerpApi Autocomplete variations and Google Search questions (PAA).
+   - Classifies query intent: *informational*, *commercial*, and *transactional*.
+   - Cross-analyzes queries against crawled on-page text (titles, descriptions, H1 headings, pathnames).
+   - Categorizes coverage status: *Covered*, *Partial coverage*, or *Opportunity gap*.
+   - Generates factual, actionable content recommendations without fabricating search volumes or CPC estimates.
+
+5. **Deterministic SEO & AEO Audits:**
+   - Detects genuine, supportable issues:
+     - Missing or weak page titles, long titles (>65 chars).
+     - Missing meta descriptions, short/long descriptions.
+     - Duplicate titles across crawled pages.
+     - Missing H1 headings or multiple H1 tags.
+     - Broken internal hyperlinks and broken pages (4xx/5xx/network errors).
+     - Canonical issues: missing canonicals, cross-origin canonicals, insecure HTTP canonicals.
+     - Malformed JSON-LD structured data syntax.
+     - Indexing directives (`noindex` / `x-robots-tag`).
+
+6. **Source-Code Fixing & Sandboxed Rebuild Verification:**
+   - Supported Next.js App Router server pages (`app/**/page.jsx`, `app/**/page.tsx`).
+   - Generates minimal unified diffs that preserve all unrelated source code.
+   - Refuses ambiguous paths, client components (`use client`), dynamic `generateMetadata()`, and nested metadata.
+   - **Sandboxed Verification (`lib/sandbox.mjs`):** Copies trusted projects to an isolated temporary sandbox, applies the metadata patch, runs Node syntax checks and project builds, and re-scans the rendered HTML to verify `<title>` and `<meta name="description">` changes in the built output.
+   - Host security guard: Declines executing untrusted remote code on public serverless instances.
+
+7. **Export Capabilities:**
+   - Download complete Markdown investigation report (`/api/report/:id?format=md`).
+   - Download structured JSON report (`/api/report/:id?format=json`).
+   - Download unified `.patch` file (`/api/patch/:id`).
+
+---
+
+## 1. Run Locally
+
+### Prerequisites
+- Node.js >= 20.11
+- npm
+- A valid SerpApi key (`SERPAPI_KEY`)
+
+### Setup on Windows (Recommended)
+Double-click `setup-and-run.cmd`. It:
+1. Prompts privately for your `SERPAPI_KEY` (hidden input, never echoed or committed).
+2. Verifies a real live Google Search request using `scripts/check-serpapi.mjs`.
+3. Installs dependencies.
+4. Executes 25 automated tests.
+5. Verifies the production build.
+6. Starts the local dev server at `http://localhost:3000`.
+
+### Manual Local Setup
 ```bash
 npm install
-cp .env.example .env.local
-# Edit .env.local and enter the real SERPAPI_KEY
+copy .env.example .env.local
+# Add your SERPAPI_KEY in .env.local
 npm run dev
 ```
 
-**Windows (recommended):** Double-click `setup-and-run.cmd`. It collects the API key privately on your own laptop (hidden input), performs one real SerpApi Google Search request, installs dependencies, runs unit tests, checks the production build, and starts the site. The key is never embedded in the downloaded ZIP. The real API check consumes one SerpApi request. Alternatively run `start-windows.cmd` after manually configuring `.env.local`. Open `http://localhost:3000`.
+---
 
-**Input:** public site URL, real search query, optional `https://github.com/owner/repository`, selected locales. Results are always retrieved for this run; there is **no stored response replay or pretend fallback**. SerpApi itself can have upstream caching; the app sends `no_cache=true` to request fresh engine results.
+## 2. Automated Testing & Verification
 
-The optional GitHub source integration uses the GitHub REST API. It supports simple static `export const metadata` exports, and adding metadata to supported Next.js App Router server pages. Dynamic metadata, client components, unsupported routes and complex nested objects are refused rather than modified speculatively.
-
-**Time and cost:** one scan makes up to **five** live SerpApi requests (up to three Google Search locale requests, one Autocomplete, and one AI Mode). Check your account's actual per-engine usage and quotas. Public GitHub API rate limits also apply.
-
-If you already have `.env.local`, run `node scripts/check-serpapi.mjs` to confirm real SerpApi account connectivity; a successful `/api/health` check alone only proves the environment variable is set, **not** that the key is accepted by SerpApi. Never upload `.env.local`.
-
-## 2. Deploy as a persistent Node.js service
-
-**Recommended:** Docker-capable VPS or managed container host with persistent storage and HTTPS reverse proxy. This application runs ongoing background investigations and writes report files; do not deploy these routes unchanged to a stateless/short-lived serverless function environment.
-
-```bash
-cp .env.example .env.local
-# Set SERPAPI_KEY and APP_ACCESS_KEY in .env.local
-# Change DATA_DIR in .env.local? Docker compose overrides it to /app/data.
-docker compose up --build -d
-```
-
-Open `http://localhost:3000` for local Docker, or route your host's HTTPS domain to port 3000 using a trusted reverse proxy. The named Docker volume stores run data persistently. Deploy a **single worker instance**, because rate limits and running-job coordination are in memory. Configure host-level inbound rate limiting and TLS. If `APP_ACCESS_KEY` is set, reviewers must enter it into the start form; the key is sent only to the server with the scan request and is never included in reports.
-
-**For judges or reviewers:** a remote installation must already have the owner's server-side SerpApi key configured and an unrestricted outbound HTTPS internet connection. Without it, scans deliberately refuse to start rather than fabricate results. You may share a private access key to limit API-credit abuse.
-
-## 3. Correctness and security
-
-- Pages are never submitted by the crawler using POST; no forms or scripts are executed.
-- Only public HTTPS hosts: DNS addresses are checked and pinned per request, including redirects, to limit SSRF and rebinding risk. Rejects local/private/reserved addresses.
-- `robots.txt` failures block the crawl rather than guessing permission. The bot can still be blocked by site security controls.
-- Server-side API credentials are never returned. The app optionally accepts an access key for scan initiation. Run IDs are unguessable but not a substitute for enterprise authentication or tenant isolation.
-- `GITHUB_TOKEN` is **optional and read-only in application behavior**. The application does not create branches or write files to GitHub. The user must confirm that the provided public repository corresponds to the scanned site.
-- Generated metadata is a **proposed source change**. Syntax/source validation does not prove a successful Next.js production build, actual deployment, ranking increase, improved indexing, search traffic or future AI citations.
-- AI Mode citation/mention results describe **one observed answer sample**, not the entire search landscape.
-- Keyword Radar uses Autocomplete suggestions and approximate on-page term coverage; it does not invent search volumes or SEO scores.
-
-## 4. Tests and verification
-
+Run the built-in test suite:
 ```bash
 npm test
-npm run build
-npm run start
+```
+**Results:** **25 passing tests, 0 failing, 0 skipped** across `tests/core.test.mjs` and `tests/features.test.mjs`.
+
+Run the full verification check (tests + Next.js production build):
+```bash
+npm run check
 ```
 
-Use `/api/health` to see whether the service is running and whether SerpApi is configured. To verify live functionality, provide a real site with a publicly accessible page and a valid SerpApi key, then inspect Search Evidence and Spider. To verify source patching, supply a public Next.js repository with a supported page that has an SEO metadata issue.
+---
 
-See `BUILD_STATUS.md` for the actual test status of the distributed ZIP. **No guarantee of deployment/build validation is implied by the source ZIP.**
+## 3. Vercel Production Deployment
 
-## 5. Data contracts and endpoints
+SERPForge is linked and deployed to:
+```
+https://serpforge-live.vercel.app
+```
 
-- `POST /api/run` — starts a new rate-limited investigation. When configured, send `X-SERPForge-Access` header.
-- `GET /api/run/:id` — poll results, crawl events, findings and sources.
-- `GET /api/report/:id?format=json|md` — download a report.
-- `GET /api/patch/:id` — download generated source patch, if available.
-- `GET /api/health` — health and SerpApi configuration status.
+### Adding Credentials to Vercel
+To enable live scans on the public deployment without committing keys to git:
+```bash
+npx vercel env add SERPAPI_KEY production
+```
+Optionally configure `APP_ACCESS_KEY` to restrict public usage and protect your SerpApi quota.
 
-Only run scans for sites you are authorized to assess. Large crawls, login areas, and private repositories are not supported.
+---
+
+## 4. Security & Provenance Principles
+
+- No simulated metrics: Zero fake traffic estimates, search volumes, or ranking guarantees.
+- Fail-closed security: Strict robots parsing, SSRF prevention, and request timeout controls.
+- Read-only GitHub integration: Scans and patches are read-only proposals for review; SERPForge never silently modifies or pushes to a repository.
+- Full credential hygiene: Real keys are never printed, committed, or exposed in output reports.

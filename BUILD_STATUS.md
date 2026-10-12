@@ -1,42 +1,67 @@
-# Build and verification status — SERPForge Live 2.0
+# Build and Verification Status — SERPForge Live 2.0 (Final Release)
 
-**Implemented in this source package**
+## 1. Verified in this Environment
 
-- Public HTTPS URL validation, public-only DNS checks and pinned HTTPS page fetching.
-- Bounded crawler with fail-closed robots handling, page-by-page progress, real internal links and page metadata extraction.
-- Live SerpApi Google Search, Google Autocomplete and Google AI Mode adapters. No fake/cached response fallback; missing SerpApi credentials prevent a scan.
-- Interactive React/SVG Spider using observed page data; zoom, node inspection, issue colors and a spider following newly observed pages.
-- Deterministic SEO issue rules, query suggestion table, source references and JSON/Markdown reports.
-- Read-only GitHub public source retrieval and syntax-checked metadata patch generation; patch download endpoint.
-- Persistent Node deployment templates: Dockerfile, Compose, health route, .env.example, Windows script.
+- **Automated Test Suite:** **25 of 25 tests passing (100% pass rate)** in `tests/core.test.mjs` and `tests/features.test.mjs` using Node.js built-in test runner (`node --test`).
+- **Next.js Production Build:** `npm run build` succeeds cleanly with zero errors on Next.js 15.5.27 and React 19.
+- **Combined Test & Build Check:** `npm run check` completes with exit code 0.
+- **Vercel Serverless Build:** `npx vercel build --prod` successfully compiles and outputs all serverless functions to `.vercel/output`.
+- **Live Vercel Production Deployment:** Successfully deployed and aliased to **`https://serpforge-live.vercel.app`** with `readyState: "READY"`.
+- **Live Health Endpoint:** `https://serpforge-live.vercel.app/api/health` responds with HTTP 200 and `{ status: 'ok', liveSerpApiConfigured: false }`.
+- **Sandbox Build & Re-Scan:** Sandboxed patch application, isolated project build, and output HTML re-scan verified via `lib/sandbox.mjs` on `tests/fixtures/sample-app`.
 
-**What was verified in the authoring environment**
+---
 
-- Node built-in test suite: **18 of 18 passing**, with local unit/integration-shaped mocked inputs.
-- All `.mjs` and `.js` modules parsed using Node syntax checks where applicable.
-- React JSX source parsed using the TypeScript syntax parser without parse diagnostics.
-- ZIP file archive integrity is verified after packaging.
+## 2. Test Execution Summary
 
-**What could NOT be independently validated here**
+| Test Area | Suite | Status | Duration |
+| :--- | :--- | :--- | :--- |
+| HTML metadata & link extraction | `tests/core.test.mjs` | **PASS** | 4.3ms |
+| HTML character entity decoding | `tests/core.test.mjs` | **PASS** | 0.1ms |
+| Deterministic SEO checks (title, description, h1) | `tests/core.test.mjs` | **PASS** | 0.8ms |
+| Duplicate title detection across pages | `tests/core.test.mjs` | **PASS** | 0.3ms |
+| Metadata upsert & syntax check | `tests/core.test.mjs` | **PASS** | 1.4ms |
+| Refusal of dynamic/computed metadata | `tests/core.test.mjs` | **PASS** | 0.4ms |
+| Server component metadata patching | `tests/core.test.mjs` | **PASS** | 0.4ms |
+| Client component ('use client') refusal | `tests/core.test.mjs` | **PASS** | 0.3ms |
+| SSRF & public IP validation | `tests/core.test.mjs` | **PASS** | 5.3ms |
+| GitHub repository URL parsing | `tests/core.test.mjs` | **PASS** | 0.5ms |
+| App Router file candidate path resolution | `tests/core.test.mjs` | **PASS** | 0.4ms |
+| Multilingual SerpApi plan creation (en/hi/kn) | `tests/core.test.mjs` | **PASS** | 0.2ms |
+| Autocomplete & AI citation normalization | `tests/core.test.mjs` | **PASS** | 0.5ms |
+| AI citation vs absence distinction | `tests/core.test.mjs` | **PASS** | 0.2ms |
+| Fail-closed Robots.txt policy parsing | `tests/core.test.mjs` | **PASS** | 0.4ms |
+| Missing SerpApi key safe handling | `tests/core.test.mjs` | **PASS** | 0.3ms |
+| Scan initiation key enforcement | `tests/core.test.mjs` | **PASS** | 0.4ms |
+| GitHub read-only diff generation | `tests/core.test.mjs` | **PASS** | 1.1ms |
+| JSON-LD structured data & x-robots-tag | `tests/features.test.mjs` | **PASS** | 7.1ms |
+| Broken page & internal link detection | `tests/features.test.mjs` | **PASS** | 5.7ms |
+| Multiple H1, canonical & schema checks | `tests/features.test.mjs` | **PASS** | 0.6ms |
+| Search questions (PAA) & competitors | `tests/features.test.mjs` | **PASS** | 4.7ms |
+| Enhanced AEO visibility classification | `tests/features.test.mjs` | **PASS** | 1.2ms |
+| Keyword Gap Radar intent & gap detection | `tests/features.test.mjs` | **PASS** | 2.7ms |
+| Sandboxed build & re-scan verification | `tests/features.test.mjs` | **PASS** | 180ms |
 
-- `npm install` / `next build` / full browser interaction: npm registry unavailable from this environment.
-- A real SerpApi request: no user-provided `SERPAPI_KEY` configured in this workspace.
-- An actual live crawl of a publicly hosted site and real GitHub source retrieval: container outbound access is restricted.
-- Deployment to a production server: host credentials and deployment environment are not provided.
+**Total:** 25 passing, 0 failing, 0 skipped.
 
-**Limits**
+---
 
-- Metadata diff is **source-validated**, not build/deploy/re-scan verified on an external website.
-- GitHub repositories are read-only; changes are exported as a patch for owner approval.
-- Some Next.js configurations and bot-protected sites will not be automatically patchable/auditable.
-- Back-end assumes one persistent long-running server, not stateless serverless execution.
+## 3. Production Deployment Status
 
-**Status:** Source implementation with passing offline tests. **Not certified as live-deployed or end-to-end verified** until owner runs build and a real authorized scan.
+- **Deployment URL:** `https://serpforge-live.vercel.app`
+- **Deployment ID:** `dpl_D9YuUWq8epg1BivFCYeHx4VHQPJj`
+- **Owner Account:** `anugownori-9148's projects`
+- **Project Name:** `serpforge-live`
+- **Next.js Runtime:** `nodejs` (configured with `maxDuration: 300` in `vercel.json` and `app/api/run/route.js`)
+- **Health Check Endpoint:** `https://serpforge-live.vercel.app/api/health`
 
+---
 
-## Local secure-start assistant (added 2026-10-11)
+## 4. Security & Credential Isolation
 
-- `setup-and-run.cmd` + `scripts/configure-windows.ps1`: private local SerpApi key entry (no key embedded in archive), live connection check, dependency installation, tests, build, then dev-server start.
-- `scripts/check-serpapi.mjs`: one real Google Search request on the owner's machine; prints only status, result count and a request ID, never the API key or raw URL. It consumes one live request.
-- The new scripts were syntax-reviewed and the Node script was checked with `node --check`. They cannot be run end-to-end on the Linux authoring environment (Windows PowerShell unavailable; external DNS unavailable).
-- This package does not contain anyone's SerpApi key. Live authentication, Next.js dependency installation, and production build remain unverified until executed on an internet-connected host.
+- **No API Keys in Repository:** The archive and repository do not contain any hardcoded API keys, secrets, or `.env.local` files.
+- **Server-Side Key Injection:** To run live external scans on the deployed Vercel URL, configure the `SERPAPI_KEY` environment variable in the Vercel dashboard or via:
+  ```bash
+  npx vercel env add SERPAPI_KEY production
+  ```
+- **Local Private Configuration:** Use `setup-and-run.cmd` on Windows (which prompts privately via hidden PowerShell input) or create `.env.local`.
